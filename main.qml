@@ -2,18 +2,21 @@ import QtQuick 2.4
 import QtQuick.Window 2.0 
 import QtGraphicalEffects 1.0
 
-Window {
+Rectangle {
     id: root
     visible: true
     width: Screen.width
     height: Screen.height
     color: "#913839"
-    property variant currentCount: 60*60*36
+    property variant currentCount: 60*60*5 + 20*60
     property variant weibo: []
+    property variant slideshow: []
+    property variant count: 0
 
     FontLoader { id: alte; source: "AlteHaasGroteskBold.ttf" }
 
     Image {
+        id: logo
         source: "ubuntu.png"
         anchors {
             top: parent.top
@@ -25,17 +28,17 @@ Window {
     ListView { 
         id: listView
         z: 3
-        width: root.width/2
+        width: root.width - 340
         height: root.height
         anchors.left: parent.left
         anchors.top: parent.top
-        anchors.topMargin: 120
+        anchors.topMargin: 220
         model: listModel
         visible: countDown.visible
 
         delegate: Rectangle { 
                 width: parent.width 
-                height: 90
+                height: retweet.text !== "" ?  weiboContent.height + retweetContent.height : weiboContent.height
                 anchors.left: parent.left
                 anchors.leftMargin: 50
                 color: "transparent"
@@ -47,6 +50,7 @@ Window {
                 Rectangle {
                     id: mask
                     anchors.margins: 10
+                    anchors.topMargin: 50
                     width: 65
                     height: 65
                     color: "black"
@@ -60,10 +64,47 @@ Window {
                     maskSource: mask
                 }
                 Text { 
-                    text: name + ": \n" + content; anchors.left: parent.left; anchors.leftMargin: 100; 
-                    anchors.top: parent.top; anchors.topMargin: 10;  
+                    id: weiboContent
+                    text: name + ": \n" + content + "\n"; anchors.left: parent.left; anchors.leftMargin: 80; 
+                    anchors.top: parent.top; anchors.topMargin: 5;  
                     color: "white"
-                    font.pointSize: 18
+                    font.pointSize: 22
+                    wrapMode: Text.WordWrap
+                    width: parent.width - 280
+                }
+                Rectangle { 
+                    id: retweetContent
+                    visible: retweet.text !== ""
+                    width: weiboContent.width * 0.8
+                    radius: 15
+                    color: "#BA6666"
+                    anchors {
+                        left: parent.left
+                        leftMargin: 150
+                        top: weiboContent.bottom
+                        topMargin: -10
+                    }
+                    height: retweet.height + 20
+                    Text {
+                        id: retweet
+                        anchors {
+                            top: parent.top
+                            left: parent.left
+                            margins: 10
+                            right: parent.right
+                        }
+                        text: retweetedContent
+                        wrapMode: Text.WordWrap
+                        color: "white"
+                        font.pointSize: 22
+                    }
+                }
+                Image {
+                    anchors.top: parent.top; anchors.topMargin: 5
+                    anchors.right: parent.right
+                    anchors.rightMargin: 60
+                    source: thumbnail
+                    width: 120
                 }
 
         }
@@ -78,12 +119,25 @@ Window {
         id: listModel 
     }
     Timer {
+        id: slideshowTimer
+        interval: 5500
+        running: countDown.visible
+        repeat: true 
+        onTriggered: { 
+            if (slideshow.length > 0) {
+                if (count >= slideshow.length) count = 0;
+                slideshowImage.source = slideshow[count]
+                count++
+            }
+        }
+    }
+    Timer {
         id: weiboTimer
         interval: 30000; running: countDown.visible; repeat: true
         triggeredOnStart: true
         onTriggered: {
             var xhr = new XMLHttpRequest();
-            xhr.open("GET", "https://api.weibo.com/2/search/topics.json?source=5786724301&q=Ubuntu手机黑客松&count=5", true); 
+            xhr.open("GET", "https://api.weibo.com/2/search/topics.json?source=5786724301&q=Ubuntu手机黑客松&count=7", true); 
             xhr.onreadystatechange = function()
             {
                 if ( xhr.readyState == xhr.DONE) {
@@ -93,7 +147,20 @@ Window {
                     for (var i = response.statuses.length - 1; i > -1; i--) { 
                         console.log(response.statuses[i].user.name, ":", response.statuses[i].text)
                         if (weibo[response.statuses[i].id] !== 1) {
-                            listModel.insert(0, {"content": response.statuses[i].text, "avatar_hd": response.statuses[i].user.avatar_hd, "name": response.statuses[i].user.name});
+                            var thumbnail = "";
+                            var retweetedContent = "";
+                            if (response.statuses[i].pic_ids.length > 0) { 
+                                thumbnail = response.statuses[i].thumbnail_pic
+                                for (var j = 0; j < response.statuses[i].pic_ids.length; j++) {
+                                    slideshow.push(thumbnail.replace(/thumbnail\/(\w+?)\.jpg/, "bmiddle/"+response.statuses[i].pic_ids[j]+".jpg"))
+                                }
+                            }
+
+                            if (typeof(response.statuses[i].retweeted_status) !== "undefined") {
+                                console.log("\t", response.statuses[i].retweeted_status.user.name, ": ", response.statuses[i].retweeted_status.text)
+                                retweetedContent = response.statuses[i].retweeted_status.user.name + ": " + response.statuses[i].retweeted_status.text 
+                            }
+                            listModel.insert(0, {"content": response.statuses[i].text, "avatar_hd": response.statuses[i].user.avatar_hd, "name": response.statuses[i].user.name, "thumbnail": thumbnail, "retweetedContent": retweetedContent });
                             weibo[response.statuses[i].id] = 1;
                         } 
                     }
@@ -153,6 +220,20 @@ Window {
             running: currentCount > 0 ? true : false
         }
     }
+
+    Text {
+        visible: false
+        anchors.top: qrcode.bottom
+        anchors.left: qrcode.right
+        anchors.leftMargin: 20
+        anchors.topMargin: 10
+        text: "etherpad.mozilla.org/MvFaBUEPRd"
+        font.pointSize: 20
+        font.bold: true
+        font.family: alte.name
+        color: "white"
+    }
+
     Text { 
         id: time
         color: "#D8BEAB"
@@ -174,11 +255,11 @@ Window {
         anchors {
             horizontalCenter: pulse.horizontalCenter
             top: pulse.top
-            topMargin: -40
+            topMargin: text === "Ready!" ? 15 :-40
         }
-        text: "Start!"
-        font.pointSize: text === "Start!" ? 80 : 140
-        color: text === "Start!" ? "red" : "black"
+        text: "Ready!"
+        font.pointSize: text === "Ready!" ? 80 : 140
+        color: text === "Ready!" ? "red" : "black"
         font.bold: true
         font.family: alte.name
         MouseArea {
@@ -199,21 +280,51 @@ Window {
 
     }
     TextEdit {
+        id: announce
         anchors {
-            horizontalCenter: parent.horizontalCenter
-            bottom: parent.bottom
-            bottomMargin: 70
+            left: parent.left
+            leftMargin: 20
+            top: parent.top
+            topMargin: 100 
         }
 
         height: 100
         font.pointSize: 40 
         font.bold: true
         font.family: alte.name
-        text: "微博话题墙: #Ubuntu手机黑客松# #北京黑客松下问童子#"
+        text: "微博话题墙: #Ubuntu手机黑客松# \nUbuntu Pin: hackubuntu"
         color: "white"
         MouseArea {
             anchors.fill: parent
             onClicked: parent.focus = !parent.focus
         }
+    }
+    Image {
+        id: qrcode
+        anchors.top: parent.top
+        anchors.left: announce.right
+        anchors.topMargin: 20
+        anchors.leftMargin: 100
+        visible: countDown.visible
+        source: "qrcode.ubuntu.png"
+        width: 180
+        height: 180
+        z: 2
+    }
+    Image {
+        id: slideshowImage
+        visible: countDown.visible
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.margins: 20
+        anchors.bottomMargin: 50
+        fillMode: Image.PreserveAspectFit
+        width: 300
+        //onSourceChanged: fade.start()
+    }
+    SequentialAnimation {
+        id: fade
+        PropertyAnimation { target: slideshowImage; property: "opacity"; to: 1; duration: 600 }
+        PropertyAnimation { target: slideshowImage; property: "opacity"; to: 0; duration: 1000 }
     }
 }
