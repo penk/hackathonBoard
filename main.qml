@@ -1,17 +1,16 @@
 import QtQuick 2.4
 import QtQuick.Window 2.0
 import QtGraphicalEffects 1.0
-
+import "qrcode.js" as QR
 
 Rectangle {
     id: root
     visible: true
-    width: Screen.width
-    height: Screen.height
+    width: 1024
+    height: 768
     color: "#913839"
-    property variant currentCount: 60*60*23 - 21*60
-    // new Date(year, month, day, hours, minutes, seconds, milliseconds)
-    property date finalDate: new Date(2015, 6, 11, 17, 00)
+    property variant currentCount: 0
+    property date finalDate: new Date(2015, 8, 11, 17, 00)
     property variant weibo: []
     property var pictureList: []
 
@@ -188,9 +187,9 @@ Rectangle {
     }
 
     Text {
+        id: url
         anchors.top: qrcode.bottom
-        anchors.right: parent.right
-        anchors.rightMargin: 70
+        anchors.left: qrcode.left
         anchors.topMargin: 10
         text: "pad.ubuntu.com/Xi4U5YvCF0"
         font.pointSize: 20
@@ -246,6 +245,7 @@ Rectangle {
 
     }
     TextEdit {
+        id: broadcast
         anchors {
             left: parent.left
             leftMargin: 20
@@ -257,7 +257,7 @@ Rectangle {
         font.pointSize: 30
         font.bold: true
         font.family: alte.name
-        text: "微博话题墙: \n#Ubuntu手机黑客松# #北京黑客松下问童子#"
+        text: "微博话题墙: \n#Ubuntu手机黑客松#"
         color: "white"
         MouseArea {
             anchors.fill: parent
@@ -266,14 +266,14 @@ Rectangle {
     }
     Image {
         id: qrcode
-        anchors.top: pulse.bottom
-        anchors.right: parent.right
-        anchors.topMargin: 120
-        anchors.rightMargin: 70
+        anchors.top: parent.top
+        anchors.left: broadcast.right
+        anchors.topMargin: 20
+        anchors.leftMargin: 70
         visible: countDown.visible
         source: "qrcode.ubuntu.png"
-        width: 200
-        height: 200
+        width: 120
+        height: 120
         z: 2
     }
 
@@ -347,5 +347,10 @@ Rectangle {
         var Seconds = Math.abs(seconds);
         currentCount = Math.floor(seconds)
         console.log("currentCount: " + currentCount );
+
+        var qr = QR.qrcode(3, 'L')
+        qr.addData('http://' + url.text);
+        qr.make()
+        qrcode.source = qr.createImgTag();
     }
 }
