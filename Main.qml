@@ -339,10 +339,6 @@ Rectangle {
     Component.onCompleted: {
         // Let's calculate the count we should go
         var now = new Date()
-        console.log("now date: " + Qt.formatDate(now, "dd.MM.yyyy"))
-        console.log("now: " + now.toLocaleDateString())
-        console.log("time: " + now.toLocaleTimeString(Qt.locale(), "HH : mm : ss"))
-        console.log("target date: " + Qt.formatDate(finalDate, "dd.MM.yyyy"))
 
         var diff = finalDate.getTime() - now.getTime()
 
