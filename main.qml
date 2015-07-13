@@ -16,8 +16,6 @@ Rectangle {
 
     property var index: 0
 
-    FontLoader { id: alte; source: "AlteHaasGroteskBold.ttf" }
-
     Image {
         source: "ubuntu.png"
         anchors {
@@ -94,6 +92,7 @@ Rectangle {
         onTriggered: {
             index = 0
             var xhr = new XMLHttpRequest();
+            // FIXME: add twitter https://api.twitter.com/1.1/search/tweets.json?q=%23ubuntuphon 
             xhr.open("GET", "https://api.weibo.com/2/search/topics.json?source=5786724301&q=Ubuntu手机黑客松&count=20", true);
             xhr.onreadystatechange = function()
             {
@@ -194,7 +193,6 @@ Rectangle {
         text: "pad.ubuntu.com/Xi4U5YvCF0"
         font.pointSize: 20
         font.bold: true
-        font.family: alte.name
         color: "white"
     }
 
@@ -209,7 +207,6 @@ Rectangle {
         }
         font.pointSize: 40
         font.bold: true
-        font.family: alte.name
         visible: false
     }
 
@@ -225,7 +222,6 @@ Rectangle {
         font.pointSize: text === "Ready!" ? 80 : 140
         color: text === "Ready!" ? "red" : "black"
         font.bold: true
-        font.family: alte.name
 
         MouseArea {
             anchors.fill: parent
@@ -240,7 +236,6 @@ Rectangle {
         anchors.horizontalCenter: pulse.horizontalCenter
         font.pointSize: countDown.visible ? 60 : 90
         font.bold: true
-        font.family: alte.name
         color: countDown.visible ? "black" : "red"
 
     }
@@ -256,7 +251,6 @@ Rectangle {
         height: 100
         font.pointSize: 30
         font.bold: true
-        font.family: alte.name
         text: "微博话题墙: \n#Ubuntu手机黑客松#"
         color: "white"
         MouseArea {
@@ -271,7 +265,6 @@ Rectangle {
         anchors.topMargin: 20
         anchors.leftMargin: 70
         visible: countDown.visible
-        source: "qrcode.ubuntu.png"
         width: 120
         height: 120
         z: 2
