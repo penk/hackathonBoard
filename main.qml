@@ -10,7 +10,7 @@ Rectangle {
     height: 768
     color: "#913839"
     property variant currentCount: 0
-    property date finalDate: new Date(2015, 8, 11, 17, 00)
+    property date finalDate: new Date(2015, 6, 15, 0, 00)
     property variant weibo: []
     property var pictureList: []
 
@@ -37,9 +37,8 @@ Rectangle {
         visible: countDown.visible
 
         delegate: Rectangle {
-            id: delegate
-            width: parent.width
-            height: delegate.childrenRect.height
+            width: parent.width 
+            height: retweet.text !== "" ?  weiboContent.height + retweetContent.height : weiboContent.height
             anchors.left: parent.left
             anchors.leftMargin: 50
             color: "transparent"
@@ -63,13 +62,48 @@ Rectangle {
                 source: image
                 maskSource: mask
             }
-            Text {
-                text: name + ": \n" + content; anchors.left: parent.left; anchors.leftMargin: 100;
-                anchors.top: parent.top; anchors.topMargin: 10;
-                width: parent.width*.9
+            Text { 
+                id: weiboContent
+                text: name + ": \n" + content + "\n"; anchors.left: parent.left; anchors.leftMargin: 80; 
+                anchors.top: parent.top; anchors.topMargin: 5;  
                 color: "white"
-                font.pointSize: 22
-                wrapMode: Text.Wrap
+                font.pointSize: 20
+                wrapMode: Text.WordWrap
+                width: parent.width - 280
+            }
+            Rectangle { 
+                id: retweetContent
+                visible: retweet.text !== ""
+                width: weiboContent.width * 0.8
+                radius: 15
+                color: "#BA6666"
+                anchors {
+                    left: parent.left
+                    leftMargin: 150
+                    top: weiboContent.bottom
+                    topMargin: -10
+                }
+                height: retweet.height + 20
+                Text {
+                    id: retweet
+                    anchors {
+                        top: parent.top
+                        left: parent.left
+                        margins: 10
+                        right: parent.right
+                    }
+                    text: retweetedContent
+                    wrapMode: Text.WordWrap
+                    color: "white"
+                    font.pointSize: 22
+                }
+            }
+            Image {
+                anchors.top: parent.top; anchors.topMargin: 5
+                anchors.right: parent.right
+                anchors.rightMargin: 60
+                source: thumbnail
+                width: 120
             }
 
         }
@@ -103,7 +137,26 @@ Rectangle {
                     for (var i = response.statuses.length - 1; i > -1; i--) {
                         console.log(response.statuses[i].user.name, ":", response.statuses[i].text)
                         if (weibo[response.statuses[i].id] !== 1) {
-                            listModel.insert(0, {"content": response.statuses[i].text, "avatar_hd": response.statuses[i].user.avatar_hd, "name": response.statuses[i].user.name});
+                            var thumbnail = "";
+                            var retweetedContent = "";
+
+                            // handle thumbnails
+                            if (response.statuses[i].pic_ids.length > 0) { 
+                                thumbnail = response.statuses[i].thumbnail_pic
+
+                                // FIXME: how to display multiple pics in one post?
+                            /*
+                                for (var j = 0; j < response.statuses[i].pic_ids.length; j++) {
+                                    slideshow.push(thumbnail.replace(/thumbnail\/(\w+?)\.jpg/, "bmiddle/"+response.statuses[i].pic_ids[j]+".jpg"))
+                                }
+                            */
+                            }
+
+                            if (typeof(response.statuses[i].retweeted_status) !== "undefined") {
+                                console.log("\t", response.statuses[i].retweeted_status.user.name, ": ", response.statuses[i].retweeted_status.text)
+                                retweetedContent = response.statuses[i].retweeted_status.user.name + ": " + response.statuses[i].retweeted_status.text 
+                            }
+                            listModel.insert(0, {"content": response.statuses[i].text, "avatar_hd": response.statuses[i].user.avatar_hd, "name": response.statuses[i].user.name, "thumbnail": thumbnail, "retweetedContent": retweetedContent });
                             weibo[response.statuses[i].id] = 1;
                         }
 
@@ -341,6 +394,7 @@ Rectangle {
         currentCount = Math.floor(seconds)
         console.log("currentCount: " + currentCount );
 
+        // Generate QRCode 
         var qr = QR.qrcode(3, 'L')
         qr.addData('http://' + url.text);
         qr.make()
