@@ -1,6 +1,6 @@
 ## hackathonBoard 
 
-![screenshot](https://gitcafe.com/penk/hackathonBoard/raw/master/screenshot.png)
+![screenshot](screenshot.png)
 
 Hackathon countdown board with Weibo topic.
 
